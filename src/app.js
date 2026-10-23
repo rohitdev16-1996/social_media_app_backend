@@ -9,15 +9,28 @@ const app = express();
 
 const { User } = require('./models/user');
 
+const validator = require('validator');
+
+const { validateSignupData } = require('./utils/validation');
+
 /* Converting the JSON data in the request body to a JavaScript object */
 app.use(express.json());
 
 /* Handle POST requests to the /signup endpoint */
 app.post("/signup", async (req, res) => {
-    const userObj = req.body;
-    const user = new User(userObj);
+
+    /* const userObj = req.body; */
+    /* const user = new User(userObj); */
 
     try {
+
+        validateSignupData(req);
+
+        const { firstName, lastName, emailId, password, age, gender } = req.body;
+        /* const saved = await user.save(); */
+
+        const user = new User({ firstName, lastName, emailId, password, age, gender });
+
         const saved = await user.save();
 
         console.log('User saved:', saved);
@@ -97,20 +110,38 @@ app.delete('/userDelete', async (req, res) => {
 });
 
 /* Handle PATCH requests to update a user */
-app.patch('/userUpdate', async (req, res) => {
+app.patch('/userUpdate/:userId', async (req, res) => {
     /* Extract the userId and updateData from the request body */
-    const userId = req.body.userId;
+    const userId = req.params?.userId;
 
     /* Extract the update data from the request body */
     const data = req.body;
 
     try {
+        const ALLOWED_UPDATES = ["userId", "photoUrl", "about", "gender", "age", "skills"];
+
+        const isUpdateAllowed = Object.keys(data).every((update) =>
+            ALLOWED_UPDATES.includes(update)
+        );
+
+        if (!isUpdateAllowed) {
+            /* Send an error response of code 400 i.e. Bad Request if the update is not allowed */
+            return res.status(400).send('Update not allowed');
+        }
+
+        if (data?.skills > 10) {
+            throw new Error('Skills cannot be more than 10');
+        }
+
         /* Find the user by ID and update them with the provided data */
-        await User.findByIdAndUpdate(userId, data);
+        await User.findByIdAndUpdate(userId, data, {
+            returnDocument: 'after',  /* Return the updated document after the update */
+            runValidators: true  /* Run validation on the update data */
+        });
         res.send("User Updated Successfully");
     } catch (err) {
         /* Send an error response of code 500 i.e. Internal Server Error if something goes wrong */
-        res.status(500).send('Something went wrong');
+        res.status(400).send('Something went wrong ' + err.message);
     }
 });
 
@@ -123,11 +154,14 @@ app.patch('/userUpdateGetBefore', async (req, res) => {
     const data = req.body;
 
     try {
-        const updatedUser = await User.findByIdAndUpdate(userId, data, { returnDocument: 'before' });
+        const updatedUser = await User.findByIdAndUpdate(userId, data, {
+            returnDocument: 'before', /* Return the document before the update */
+            runValidators: true  /* Run validation on the update data */
+        });
         res.send(updatedUser);
     } catch (err) {
         /* Send an error response of code 500 i.e. Internal Server Error if something goes wrong */
-        res.status(500).send('Something went wrong');
+        res.status(500).send('Something went wrong' + err.message);
     }
 });
 

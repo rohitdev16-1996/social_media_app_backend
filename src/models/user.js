@@ -1,63 +1,104 @@
 const mongoose = require("mongoose");
-const validator = require('validator');
+const validator = require("validator");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
-const userSchema = new mongoose.Schema({
+require("dotenv").config();
+
+const userSchema = new mongoose.Schema(
+  {
     firstName: {
-        type: String,
-        required: true,
-        minlength: 3,
-        maxlength: 30,
+      type: String,
+      required: true,
+      minlength: 3,
+      maxlength: 30,
     },
     lastName: {
-        type: String
+      type: String,
     },
     emailId: {
-        type: String,
-        required: true,
-        unique: true,
-        lowercase: true,
-        trim: true
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
     },
     password: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
     },
     age: {
-        type: Number,
-        min: 18,
+      type: Number,
+      min: 18,
     },
     gender: {
-        type: String,
-        validate(value) {
-            if (!['male', 'female', 'other'].includes(value)) {
-                throw new Error('Gender must be either male, female, or other');
-            }
+      type: String,
+      validate(value) {
+        if (!["male", "female", "other"].includes(value)) {
+          throw new Error("Gender must be either male, female, or other");
         }
+      },
     },
     photoUrl: {
-        type: String,
-        default: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png",
-        validate(value) {
-            if (!validator.isURL(value)) {
-                throw new Error("The photo URL is not valid");
-            }
+      type: String,
+      default:
+        "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png",
+      validate(value) {
+        if (!validator.isURL(value)) {
+          throw new Error("The photo URL is not valid");
         }
+      },
     },
     about: {
-        type: String,
-        default: "This is a default about me section. You can update it later."
+      type: String,
+      default: "This is a default about me section. You can update it later.",
     },
     skills: {
-        type: [String],
+      type: [String],
     },
-},
-    {
-        timestamps: true
-    }
+  },
+  {
+    timestamps: true,
+  },
 );
+
+userSchema.methods.getJWT = async function () {
+  /* The User document */
+  const user = this;
+
+  const token = await jwt.sign(
+    {
+      _id: user._id,
+    },
+    process.env.AUTH_SECRET_KEY,
+    {
+      expiresIn: "7d",
+    },
+  );
+
+  return token;
+};
+
+userSchema.methods.validatePassword = async function (passwordInputByUser) {
+  const user = this;
+
+  /* the stored hash */
+  const passwordHash = user.password;
+
+  const isPasswordValid = await bcrypt.compare(
+    /* 1st: password typed by the user */
+    passwordInputByUser,
+
+    /* 2nd: stored hash */
+    passwordHash,
+  );
+
+  /* True or False */
+  return isPasswordValid;
+};
 
 const UserActivation = mongoose.model("User", userSchema, "User");
 
 module.exports = {
-    User: UserActivation
+  User: UserActivation,
 };

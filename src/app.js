@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 /* Import the express package and store it in the variable express*/
 const express = require("express");
 
@@ -7,21 +9,13 @@ const { connectDB } = require("./config/database");
 /* Create an application of express and store it in the variable app */
 const app = express();
 
-const { User } = require("./models/user");
-
-const validator = require("validator");
-
-const { validateSignupData } = require("./utils/validation");
-
-const bcrypt = require("bcrypt");
-
 const cookieParser = require("cookie-parser");
 
-const jwt = require("jsonwebtoken");
+const cors = require("cors");
 
-const { userAuth } = require("./middlewares/auth");
-
-require("dotenv").config();
+const authRouter = require("./routes/auth");
+const profileRouter = require("./routes/profile");
+const connectionRequestRouter = require("./routes/connectionRequest");
 
 /* Converting the JSON data in the request body to a JavaScript object */
 app.use(express.json());
@@ -29,104 +23,10 @@ app.use(express.json());
 /* Parsing the cookie */
 app.use(cookieParser());
 
-/* Handle POST requests to the /signup endpoint */
-app.post("/signup", async (req, res) => {
-  try {
-    /* Validation of Data. */
-    validateSignupData(req);
+app.use("/", authRouter);
+app.use("/", profileRouter);
+app.use("/", connectionRequestRouter);
 
-    /* Storing only the fields which we have in the Database. */
-    const { firstName, lastName, emailId, password, age, gender } = req.body;
-
-    /* Encrypt the password. */
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    /* Create the object which has to be passed to the database */
-    const user = new User({
-      firstName,
-      lastName,
-      emailId,
-      password: passwordHash,
-      age,
-      gender,
-    });
-
-    /* Save the objet to the database */
-    const saved = await user.save();
-
-    /* Print the message on the console that we have saved the data to the database.
-           This line should be removed from the production code, we do not want to give
-           any message to the user from the console log.
-        */
-    console.log("User saved:", saved);
-
-    /* Send the response to the user that the User is created successfully. */
-    res.status(201).send("User created successfully");
-  } catch (error) {
-    /* Send an error response of Bad Request code 400 */
-    res.status(400).send("ERROR : " + error.message);
-  }
-});
-
-/* Handle POST requests to the /login endpoint */
-app.post("/login", async (req, res) => {
-  try {
-    /* De-structuring the emailId and password from the request body */
-    const { emailId, password } = req.body;
-
-    /* Validating the email Id using the validator package */
-    if (!validator.isEmail(emailId)) {
-      res.status(400).send("ERROR : " + err.message);
-    }
-
-    /* Find the user in the Database */
-    const user = await User.findOne({
-      emailId,
-    });
-
-    /* Check if the user is found or not? */
-    if (!user) {
-      throw new Error("Invalid credentials");
-    }
-
-    /* Compare the password using the bcrypt.compare() */
-    const isPasswordValid = await user.validatePassword(password);
-
-    if (isPasswordValid) {
-      /* Step 1: Create a JWT Token */
-      const token = await user.getJWT();
-
-      /* Step 2: Add the token to cookie */
-      // inside login, after the email and password are validated
-      res.cookie("token", token);
-
-      /* Step 3: Send the response back to user */
-      /* Return the Login Successful message */
-      res.status(200).send("Login successful");
-    } else {
-      throw new Error("Invalid Password");
-    }
-  } catch (err) {
-    res.status(400).send("ERROR : " + err.message);
-  }
-});
-
-app.get("/profile", userAuth, async (req, res) => {
-  try {
-    const user = req.user;
-    if (!user) {
-      throw new Error("User does not exist");
-    }
-    res.send(user);
-  } catch (err) {
-    res.status(400).send("ERROR : " + err.message);
-  }
-});
-
-app.post("/sendConnectionRequest", userAuth, async (req, res) => {
-  const user = req.user;
-  res.send(user.firstName + " sent the connection request");
-});
 
 /* Handle GET requests to fetch a user by email */
 app.get("/userByEmail", async (req, res) => {

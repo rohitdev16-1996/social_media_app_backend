@@ -30,7 +30,7 @@ const userAuth = async (req, res, next) => {
         /* Move to the next handler */
         next();
     } catch (err) {
-        res.status(400).send("ERROR : " + err.message);
+        res.status(400).send("ERROR auth.js(middleware): " + err.message);
     }
 }
 

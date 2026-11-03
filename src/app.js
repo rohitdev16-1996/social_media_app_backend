@@ -24,6 +24,14 @@ app.use(express.json());
 /* Parsing the cookie */
 app.use(cookieParser());
 
+/* CORS middleware added for the frontend */
+app.use(
+  cors({
+    origin : process.env.FRONTEND_URL,
+    credentials : true
+  }),
+);
+
 app.use("/", authRouter);
 app.use("/", userRouter);
 app.use("/", profileRouter);

@@ -1,6 +1,7 @@
 const express = require("express");
 const profileRouter = express.Router();
-const { userAuth } = require("../middlewares/auth");
+const userObj = require("../middlewares/auth");
+const userAuth = userObj.userAuth;
 const { validateEditProfileData } = require("../utils/validation");
 
 /* Get the authenticated user's profile */

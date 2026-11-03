@@ -1,8 +1,11 @@
 const express = require("express");
 const connectionRequestRouter = express.Router();
-const { userAuth } = require("../middlewares/auth");
+const userObj = require("../middlewares/auth");
+const userAuth = userObj.userAuth;
 const { ConnectionRequest } = require("../models/connectionRequest");
+const { User } = require("../models/user");
 
+/* Send Connection Request */
 connectionRequestRouter.post(
   "/request/send/:status/:toUserId",
   userAuth,
@@ -59,7 +62,57 @@ connectionRequestRouter.post(
 
     }
     catch (err) {
-      res.status(400).json({ message: "Error sending connection request" });
+      res.status(400).json({ message: "Error sending connection request : " + err.message });
+    }
+  });
+
+/* Review Connection Request */
+connectionRequestRouter.post(
+  "/request/review/:status/:requestId",
+  userAuth,
+  async (req, res) => {
+    try {
+      const loggedInUser = req.user;
+      const { status } = req.params.status;
+      const { requestId } = req.params.requestId;
+
+      /* Check 2 : Status passed should be accepted or rejected */
+      const allowedStatus = ["accepted", "rejected"];
+      if (!allowedStatus.includes(status)) {
+        return res.status(400).json({ message: "Invalid status type: " + status });
+      }
+
+      const connectionRequest = await ConnectionRequest.findByOne({
+        /* Check 3: Status should be "interested" of the request */
+        status: "interested",
+
+        /* Check 4: toUserId should match the logged-in userId */
+        toUserId: loggedInUser._id,
+
+        /* Check 5: Request should exist */
+        _id: requestId,
+      });
+
+      if (!connectionRequest) {
+        return res.
+          status(404).
+          json({ message: "Invalid request" });
+      }
+
+      /* Update the status of the connection request */
+      connectionRequest.status = status;
+
+      /* Save the updated connection request */
+      const data = await connectionRequest.save();
+
+      /* Send the updated connection request in the response */
+      res.json({
+        message: `Connection request ${status} successfully`,
+        data
+      });
+
+    } catch (err) {
+      res.status(400).json({ message: "ERROR :" + err.message });
     }
   });
 

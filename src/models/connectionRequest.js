@@ -26,7 +26,7 @@ const connectionRequestSchema = new mongoose.Schema(
 );
 
 /* Corner Case 4: User should not be allowed to send the request to themselves */
-connectionRequestSchema.pre("save", function (next) {
+connectionRequestSchema.pre("save", async function (next) {
 
     const connectionRequest = this;
 
@@ -35,7 +35,7 @@ connectionRequestSchema.pre("save", function (next) {
     }
 
     /* Remember to call next() to proceed with the save operation */
-    next();
+    /* next(); */
 });
 
 connectionRequestSchema.index({ fromUserId: 1, toUserId: 1 }, { unique: true });

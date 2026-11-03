@@ -73,8 +73,8 @@ connectionRequestRouter.post(
   async (req, res) => {
     try {
       const loggedInUser = req.user;
-      const { status } = req.params.status;
-      const { requestId } = req.params.requestId;
+      const status = req.params.status;
+      const requestId = req.params.requestId;
 
       /* Check 2 : Status passed should be accepted or rejected */
       const allowedStatus = ["accepted", "rejected"];
@@ -82,7 +82,7 @@ connectionRequestRouter.post(
         return res.status(400).json({ message: "Invalid status type: " + status });
       }
 
-      const connectionRequest = await ConnectionRequest.findByOne({
+      const connectionRequest = await ConnectionRequest.findOne({
         /* Check 3: Status should be "interested" of the request */
         status: "interested",
 

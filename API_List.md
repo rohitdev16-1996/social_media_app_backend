@@ -17,4 +17,4 @@
 |                    |        |                                     |                                                         |
 | User               | GET    | /user/connections                   | All my friends                                          |
 |                    | GET    | /user/requests/received             | Requests people sent me                                 |
-|                    | GET    | /user/feed                          | Profiles of other users to swipe on                     |
+|                    | GET    | /user/feed                          | Profiles of other users to send the request             |

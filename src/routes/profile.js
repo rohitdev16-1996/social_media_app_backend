@@ -13,14 +13,14 @@ profileRouter.get("/profile/view", userAuth, async (req, res) => {
     }
     res.send(user);
   } catch (err) {
-    res.status(400).send("ERROR : " + err.message);
+    res.status(401).send("ERROR : " + err.message);
   }
 });
 
 /* Update the authenticated user's profile */
 profileRouter.patch("/profile/edit", userAuth, async (req, res) => {
   try {
-    if (validateEditProfileData(req)) {
+    if (!validateEditProfileData(req)) {
       throw new Error("Invalid fields in the request body");
       return res.status(400).send("Invalid fields in the request body");
     }

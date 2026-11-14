@@ -28,16 +28,29 @@ authRouter.post("/signup", async (req, res) => {
         });
 
         /* Save the objet to the database */
-        const saved = await user.save();
+        /* const saved = await user.save(); */
+        const savedUser = await user.save();
 
         /* Print the message on the console that we have saved the data to the database.
                This line should be removed from the production code, we do not want to give
                any message to the user from the console log.
             */
-        console.log("User saved:", saved);
+        /* console.log("User saved:", saved); */
+
+        /* Step 1: Create a JWT Token */
+        const token = await user.getJWT();
+
+        /* Step 2: Add the token to cookie */
+        res.cookie("token", token, {
+            expires : new Date(Date.now() + 8 * 3600000)
+        });
 
         /* Send the response to the user that the User is created successfully. */
-        res.status(201).send("User created successfully");
+        /* res.status(201).send("User created successfully"); */
+        res.json({
+            message: "User created successfully",
+            data: savedUser
+        });
     } catch (error) {
         /* Send an error response of Bad Request code 400 */
         res.status(400).send("ERROR : " + error.message);

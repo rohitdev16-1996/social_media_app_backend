@@ -21,10 +21,10 @@ userRouter.get("/user/requests/received", userAuth, async (req, res) => {
         /* Interested means the request is pending and not yet reviewed by the logged-in user */
         status: "interested",
       })
-      .populate("fromUserId", "firstName lastName");
+      .populate("fromUserId", "firstName lastName photoUrl age gender about");
 
     res.json({
-      message: "Connection requests received by the logged-in user",
+      message: "Requests fetched!!!",
       data: connectionRequests,
     });
 

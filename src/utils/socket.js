@@ -1,6 +1,8 @@
 const socket = require("socket.io");
 
 const crypto = require("crypto");
+const { Chat } = require("../models/chat");
+const { timeStamp } = require("console");
 
 const getSecretRoomId = (userId, targetUserId) => {
   return crypto
@@ -18,7 +20,6 @@ const initializeSocket = (server) => {
   });
 
   io.on("connection", (socket) => {
-
     /* Print the token */
     console.log(socket.handshake.auth);
 
@@ -32,12 +33,49 @@ const initializeSocket = (server) => {
     });
 
     /* Received message from the frontend and broadcast it to the room */
-    socket.on("sendMessage", ({ firstName, userId, targetUserId, text }) => {
-      /* const roomId = [userId, targetUserId].sort().join("_"); */
-      const roomId = getSecretRoomId(userId, targetUserId);
-      console.log(firstName + " " + text);
-      io.to(roomId).emit("messageReceived", { firstName, text });
-    });
+    socket.on(
+      "sendMessage",
+      async ({ firstName, userId, targetUserId, text }) => {
+        /* Save messages to the database */
+        try {
+          /* const roomId = [userId, targetUserId].sort().join("_"); */
+          const roomId = getSecretRoomId(userId, targetUserId);
+          console.log(firstName + " " + text);
+
+          /* Find the chat with the participants */
+          let chat = await Chat.findOne({
+            participants: { $all: [userId, targetUserId] },
+          });
+
+          /* If chat does not exists in the database */
+          if (!chat) {
+            /* Create a new Chat record */
+            chat = new Chat({
+              participants: [userId, targetUserId],
+              messages: [],
+            });
+          }
+
+          /* Push the chat in the records, because now the chat is present anyways */
+          chat.messages.push({
+            senderId: userId,
+            text,
+          });
+
+          /* Save the chat to the database */
+          await chat.save();
+
+          /* Send the chat to the web socket room */
+          io.to(roomId).emit("messageReceived", {
+            firstName,
+            text,
+            timeStamp: new Date(),
+          });
+        } catch (err) {
+          console.log(err);
+        }
+      },
+    );
 
     socket.on("disconnect", () => {});
   });

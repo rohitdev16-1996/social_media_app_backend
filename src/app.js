@@ -19,6 +19,7 @@ const authRouter = require("./routes/auth");
 const profileRouter = require("./routes/profile");
 const connectionRequestRouter = require("./routes/connectionRequest");
 const userRouter = require("./routes/user");
+const chatRouter = require("./routes/chat");
 
 /* Converting the JSON data in the request body to a JavaScript object */
 app.use(express.json());
@@ -38,6 +39,7 @@ app.use("/", authRouter);
 app.use("/", userRouter);
 app.use("/", profileRouter);
 app.use("/", connectionRequestRouter);
+app.use("/", chatRouter);
 
 /* Handle GET requests to fetch a user by email */
 app.get("/userByEmail", async (req, res) => {

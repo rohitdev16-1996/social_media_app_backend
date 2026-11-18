@@ -12,6 +12,8 @@ const app = express();
 const cookieParser = require("cookie-parser");
 
 const cors = require("cors");
+const http = require("http");
+const initializeSocket = require("./utils/socket");
 
 const authRouter = require("./routes/auth");
 const profileRouter = require("./routes/profile");
@@ -167,6 +169,11 @@ app.use("/", (req, res) => {
   res.send("Hello World!");
 });
 
+const server = http.createServer(app);
+
+/* Initialize the socket */
+initializeSocket(server);
+
 /* Connect to the database first and then start the server, if the database
 connection is successful */
 connectDB()
@@ -174,7 +181,7 @@ connectDB()
     console.log("Database connection established successfully");
 
     /* The app listens for requests on port 7777 */
-    app.listen(7777, () => {
+    server.listen(7777, () => {
       /* Called only when the server is up and running */
       console.log("Server is up and running");
     });
